@@ -1,0 +1,17 @@
+<h1>Request to join the {{ tname }} team!</h1>
+
+<h3>{{ compe }}</h3>
+
+<form action="{% url 'smartathon:create join request handler' %}" method="post">
+
+    {% csrf_token %}
+
+    <label for="tname">Add a personalised message (Optional):</label>
+    <textarea name="rmsge"></textarea>
+
+    <input type="text" name="tname" id="tname" hidden="hidden" value="{{ tname }}">
+    <input type="text" name="cname" id="cname" hidden="hidden" value="{{ cname }}">
+
+    <input type="submit" name="submit" id="submit">
+
+</form>

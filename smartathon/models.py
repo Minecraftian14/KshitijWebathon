@@ -11,7 +11,6 @@ class User(models.Model):
 
 class Competition(models.Model):
     cname = models.CharField(max_length=40)
-    cid = models.BigIntegerField(default=0)
     cdesc = models.CharField(max_length=200)
     cdate = models.DateTimeField()
     cvenue = models.CharField(max_length=200)
@@ -20,15 +19,21 @@ class Competition(models.Model):
 
 class TeamDetails(models.Model):
     tname = models.CharField(max_length=40)
-    cid = models.BigIntegerField(default=0)
-    members = models.IntegerField(default=0)
+    compe = models.CharField(max_length=40)
+    vacant_members = models.IntegerField(default=0)
     tfref = models.BigIntegerField(null=True)
 
     def table(self):
         return {
             'tname': self.tname,
-            'members': self.members
+            'vacant_members': self.vacant_members
         }
+
+
+class Request(models.Model):
+    cname = models.CharField(max_length=40)
+    tname = models.CharField(max_length=40)
+    rmsge = models.CharField(max_length=100)
 
 
 class TeamMembers(models.Model):
