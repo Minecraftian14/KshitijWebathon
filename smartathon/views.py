@@ -62,10 +62,10 @@ def user_login_command(req: HttpRequest):
 
         upass = req.POST['upass']
 
-        if obj.upass != upass:
+        if obj.password != upass:
             return {'status': 'fail', 'reason': 'invalid password'}
 
-        req.session['uname'] = obj.uname
+        req.session['uname'] = obj.name
 
         return {'status': 'success', 'reason': 'login successful'}
 
@@ -140,7 +140,7 @@ def create_team_command(reg: HttpRequest):
         vacant_members = compe.max_members - 1
         tfref = 0
 
-        TeamDetails(tname=tname, compe=compe.cname, vacant_members=vacant_members, tfref=tfref).save()
+        TeamDetails(tname=tname, compe=compe.name, vacant_members=vacant_members, tfref=tfref).save()
 
         return {'status': 'success', 'reason': 'team successfully created'}
 
@@ -166,8 +166,8 @@ def list_competitions_command(reg: HttpRequest):
         c_list = []
         for c in Competition.objects.all():
             c_list.append({
-                'cname': c.cname, 'cdesc': c.cdesc, 'cdate': c.cdate, 'cvenue': c.cvenue, 'max_members': c.max_members,
-                'teams': [t.table() for t in TeamDetails.objects.filter(compe=c.cname)]
+                'cname': c.name, 'cdesc': c.description, 'cdate': c.date, 'cvenue': c.venue, 'max_members': c.max_members,
+                'teams': [t.table() for t in TeamDetails.objects.filter(compe=c.name)]
             })
         return {'status': 'success', 'reason': 'query successful', 'data': c_list}
 
