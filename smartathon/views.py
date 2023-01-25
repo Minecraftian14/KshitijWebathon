@@ -1,212 +1,171 @@
 from django.http import HttpResponse, HttpRequest, JsonResponse
 from .models import *
+from .view_utils import *
 from django.shortcuts import render
+import re
 
 
-def hello_world(req):
-    return HttpResponse("Hello world, the server is online!")
-
-
+@backend_command
 def create_user_command(req: HttpRequest):
-    try:
-        uname = req.POST['uname']
+    name = from_post(req, 'name')
+    verify_name(name)
+    assert_expr(User.objects.filter(pk=name).count() == 0, 'username is already in use')
 
-        if len(uname) == 0:
-            return {'status': 'fail', 'reason': 'invalid user name'}
+    password = from_post(req, 'password')
+    assert_expr(len(password) >= 8
+                and count(r'[0-9]', password) > 0
+                and count(r'[A-Z]', password) > 0
+                and count(r'[a-z]', password) > 0
+                and count(r'[@$!%*#?&]', password) > 0,
+                '''
+                invalid password, the password must contain at least one digit, at least one capital case
+                character, at least one lower case character and at least one special symbol (@$!%*#?&)
+                ''')
 
-        if len(User.objects.filter(uname=uname)) > 0:
-            return {'status': 'fail', 'reason': 'user already exists'}
+    mail = from_post(req, 'mail')
+    assert_expr(re.match(r'^([a-zA-Z0-9+_.-]+)@([a-zA-Z0-9-]+)(\.[a-zA-Z]{2,5}){1,2}$', mail),
+                'invalid mail format')
 
-        upass = req.POST['upass']
+    User(name=name, password=password, mail=mail).save()
 
-        if len(upass) < 8:
-            return {'status': 'fail', 'reason': 'invalid password'}
-
-        umail = req.POST['umail']
-
-        if len(uname) == 0:
-            return {'status': 'fail', 'reason': 'invalid user name'}
-
-        obj = User(uname=uname, upass=upass, umail=umail)
-        obj.save()
-
-        return {'status': 'success', 'reason': 'Account successfully create.'}
-
-    except Exception as e:
-        print(repr(e))
-        return {'status': 'fail', 'reason': 'absolute failure'}
+    return success('account successfully created')
 
 
-def create_user_dev_ui(req: HttpRequest):
-    return render(req, 'devui/signup.html', {})
-
-
-def create_user_service(req: HttpRequest):
-    res = create_user_command(req)
-    return JsonResponse(res)
-
-
-def create_user_handler(req: HttpRequest):
-    return render(req, 'devui/success.html', create_user_command(req))
-
-
+@backend_command
 def user_login_command(req: HttpRequest):
-    try:
-        uname = req.POST['uname']
+    name = from_post(req, 'name')
+    verify_name(name)
 
-        try:
-            obj = User.objects.get(uname=uname)
-        except Exception as e:
-            print(repr(e))
-            return {'status': 'fail', 'reason': 'user does not exists'}
+    user = do_or_die(lambda: User.objects.get(name=name), 'account does not exists')
 
-        upass = req.POST['upass']
+    password = from_post(req, 'password')
+    assert_expr(user.password == password, 'invalid password')
 
-        if obj.upass != upass:
-            return {'status': 'fail', 'reason': 'invalid password'}
+    req.session['logged_in_user'] = name
 
-        req.session['uname'] = obj.uname
-
-        return {'status': 'success', 'reason': 'login successful'}
-
-    except Exception as e:
-        print(repr(e))
-        return {'status': 'fail', 'reason': 'absolute failure'}
+    return success('login successful')
 
 
-def user_login_dev_ui(req: HttpRequest):
-    return render(req, 'devui/login.html', {})
-
-
-def user_login_service(req: HttpRequest):
-    return JsonResponse(user_login_command(req))
-
-
-def user_login_handler(req: HttpRequest):
-    return render(req, 'devui/success.html', user_login_command(req))
-
-
+@backend_command
 def user_logout_command(req: HttpRequest):
-    try:
-        del req.session['uname']
-        return {'status': 'success', 'reason': 'logout successful'}
-
-    except Exception as e:
-        print(repr(e))
-        return {'status': 'fail', 'reason': 'absolute failure'}
+    del req.session['logged_in_user']
+    return success('logout successful')
 
 
-def user_logout_service(req: HttpRequest):
-    return JsonResponse(user_logout_command(req))
+@backend_command
+def create_competition_command(req: HttpRequest):
+    name = from_post(req, 'name')
+    verify_name(name)
+
+    max_members = from_post(req, 'max_members')
+    assert_expr(int(max_members) >= 2, 'there should be at least 2 members in a team.')
+
+    description = from_post(req, 'description')
+    date = from_post(req, 'date')
+    venue = from_post(req, 'venue')
+
+    Competition(name=name, description=description, date=date, venue=venue, max_members=max_members).save()
+
+    return success('competition successfully created')
 
 
-def user_logout_handler(req: HttpRequest):
-    return render(req, 'devui/success.html', user_logout_command(req))
+@backend_command
+def create_team_command(req: HttpRequest):
+    name = from_post(req, 'name')
+    verify_name(name)
+
+    c_id = from_post(req, 'c_id')
+    competition = do_or_die(lambda: Competition.objects.get(pk=c_id), malnourished_form('competition name'))
+
+    u_name = req.session['logged_in_user']
+    do_or_die(lambda: User.objects.get(pk=u_name), malnourished_form('affiliated username'))
+
+    assert_expr(TeamDetails.objects.filter(competition_id=c_id, members={'u_name': u_name}).count() == 0,
+                'you can not join two teams in the same competition')
+
+    competition.teamdetails_set.create(name=name,
+                                       vacant_spaces=competition.max_members - 1,
+                                       members=[{'u_name': u_name}])
+
+    return success('team successfully created')
 
 
-def create_competition_command(reg: HttpRequest):
-    try:
-        cname = reg.POST['cname']
-        cdesc = reg.POST['cdesc']
-        cdate = reg.POST['cdate']
-        cvenue = reg.POST['cvenue']
-        max_members = reg.POST['max_members']
-
-        Competition(cname=cname, cdesc=cdesc, cdate=cdate, cvenue=cvenue, max_members=max_members).save()
-
-        return {'status': 'success', 'reason': 'competition successfully created'}
-
-    except Exception as e:
-        print(repr(e))
-        return {'status': 'fail', 'reason': 'absolute failure'}
-
-
-def create_competition_dev_ui(req: HttpRequest):
-    return render(req, 'devui/new_competition.html', {})
-
-
-def create_competition_service(req: HttpRequest):
-    return JsonResponse(create_competition_command(req))
-
-
-def create_competition_handler(req: HttpRequest):
-    return render(req, 'devui/success.html', create_competition_command(req))
-
-
-def create_team_command(reg: HttpRequest):
-    try:
-        tname = reg.POST['tname']
-        compe = Competition.objects.get(cname=reg.POST['compe'])
-        vacant_members = compe.max_members - 1
-        tfref = 0
-
-        TeamDetails(tname=tname, compe=compe.cname, vacant_members=vacant_members, tfref=tfref).save()
-
-        return {'status': 'success', 'reason': 'team successfully created'}
-
-    except Exception as e:
-        print(repr(e))
-        return {'status': 'fail', 'reason': 'absolute failure'}
-
-
-def create_team_dev_ui(req: HttpRequest, compe):
-    return render(req, 'devui/new_team.html', {'compe': compe})
-
-
-def create_team_service(req: HttpRequest):
-    return JsonResponse(create_team_command(req))
-
-
-def create_team_handler(req: HttpRequest):
-    return render(req, 'devui/success.html', create_team_command(req))
-
-
-def list_competitions_command(reg: HttpRequest):
-    try:
-        c_list = []
-        for c in Competition.objects.all():
-            c_list.append({
-                'cname': c.cname, 'cdesc': c.cdesc, 'cdate': c.cdate, 'cvenue': c.cvenue, 'max_members': c.max_members,
-                'teams': [t.table() for t in TeamDetails.objects.filter(compe=c.cname)]
-            })
-        return {'status': 'success', 'reason': 'query successful', 'data': c_list}
-
-    except Exception as e:
-        print(repr(e))
-        return {'status': 'fail', 'reason': 'absolute failure'}
-
-
-def list_competitions_service(req: HttpRequest):
-    return JsonResponse(list_competitions_command(req))
-
-
-def list_competitions_handler(req: HttpRequest):
-    return render(req, 'devui/competition_list.html',
-                  {'c_list': list_competitions_command(req)['data'], 'session': 'uname' in req.session})
-
-
+@backend_command
 def create_join_request_command(req: HttpRequest):
-    try:
-        cname = req.POST['cname']
-        tname = req.POST['tname']
-        rmsge = req.POST['rmsge']
+    t_name = from_post(req, 't_name')
+    u_name = req.session['logged_in_user']
+    assert_expr(Request.objects.filter(author__name=u_name, team__name=t_name).count() == 0,
+                "you can't send request to the same team again")
+    assert_expr(TeamDetails.objects.filter(name=t_name, members={'u_name': u_name}).count() == 0,
+                "you are already a member")
 
-        Request(cname=cname, tname=tname, rmsge=rmsge).save()
+    request_message = from_post(req, 'request_message')
 
-        return {'status': 'succes', 'reason': 'request sent'}
+    user = do_or_die(lambda: User.objects.get(pk=u_name), "the username does not exist")
+    team = do_or_die(lambda: TeamDetails.objects.get(name=t_name), "the requested team does not exist")
+    assert_expr(team.vacant_spaces > 0, "the team just accepted someone else...")
 
-    except Exception as e:
-        print(repr(e))
-        return {'status': 'fail', 'reason': 'absolute failure'}
+    Request(author=user, team=team, request_message=request_message).save()
+    team.vacant_spaces -= 1
+    team.save()
 
-
-def create_join_request_dev_ui(req: HttpRequest, tname, cname):
-    return render(req, 'devui/request_joining.html', {'tname': tname, 'cname': cname})
-
-
-def create_join_request_service(req: HttpRequest):
-    return JsonResponse(create_join_request_command(req))
+    return success('request sent')
 
 
-def create_join_request_handler(req: HttpRequest):
-    return render(req, 'devui/success.html', create_join_request_command(req))
+@backend_command
+def accept_join_request_command(req: HttpRequest):
+    r_id = from_post(req, 'r_id')
+    request = do_or_die(lambda: Request.objects.get(pk=r_id), 'invalid request identity')
+    u_name = request.author.name
+
+    request.team.members = request.team.members + [{'u_name': u_name}]
+    assert_expr(request.team.vacant_spaces > 0, 'illegal state! team must have at least one vacant space')
+    request.team.vacant_spaces = request.team.vacant_spaces - 1
+    request.team.save()
+    request.delete()
+
+    return success('request accepted')
+
+
+@backend_command
+def list_competitions_command(req: HttpRequest):
+    c_list = []
+    for c in Competition.objects.all():
+        teams = c.teamdetails_set.filter(vacant_spaces__gt=0)
+        if 'logged_in_user' in req.session:
+            teams = teams.exclude(members={'u_name': req.session['logged_in_user']})
+        c_list.append({
+            'id': c.pk, 'name': c.name, 'description': c.description, 'date': c.date,
+            'venue': c.venue, 'max_members': c.max_members,
+            'teams': [t.short_table() for t in teams]
+        })
+    return success('query successful', c_list)
+
+
+@backend_command
+def list_team_details_command(req: HttpRequest):
+    u_name = req.session['logged_in_user']
+    user = do_or_die(lambda: User.objects.get(pk=u_name), "the username does not exist")
+    teams = TeamDetails.objects.filter(members={'u_name': u_name})
+
+    your_teams = [t.long_table() for t in teams]
+    requests = [r.team.long_table() for r in user.request_set.all()]
+    pending_requests = []
+
+    for t in teams.filter(vacant_spaces__gt=0):
+        pending_requests.append({
+            'team': t.long_table(),
+            'requests': [r.table() for r in t.request_set.all()]
+        })
+
+    return success('query successful', {
+        'your_teams': your_teams,
+        'requests': requests,
+        'pending_requests': pending_requests,
+    })
+
+
+def list_team_details_handler(req: HttpRequest):
+    return render(req, 'devui/team_details.html', {
+
+    })

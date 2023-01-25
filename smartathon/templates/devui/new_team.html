@@ -1,15 +1,15 @@
 <h1>Register a new team!</h1>
 
-<h3>{{ compe }}</h3>
+<h3>{{ c_name }}</h3>
 
 <form action="{% url 'smartathon:create team handler' %}" method="post">
 
     {% csrf_token %}
 
-    <input type="text" name="tname" id="tname">
-    <label for="tname">Enter the name of the team:</label><br>
+    <label for="name">Enter the name of the team:</label><br>
+    <input type="text" name="name" id="name">
 
-    <input type="text" name="compe" id="compe" hidden="hidden" value="{{ compe }}">
+    <input type="text" name="c_id" id="c_id" hidden="hidden" value="{{ c_id }}">
 
     <input type="submit" name="submit" id="submit">
 

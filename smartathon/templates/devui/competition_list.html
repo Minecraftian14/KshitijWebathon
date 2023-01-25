@@ -1,17 +1,21 @@
 <h1>Competitions</h1>
 
-{% if session %}
+<h2>{{ logged_in_user }}</h2>
+
+{# Log In/ Sign In/ Log Out/ New Competition/ Team Details #}
+{% if logged_in_user %}
     <form action="{% url 'smartathon:user logout handler' %}" method="get">
         <button type="submit">Log Out</button>
     </form>
 
     <form action="{% url 'smartathon:create competition dev ui' %}" method="get">
-        <button type="submit">Register a new Competition</button>
+        <button type="submit">Register a new competition</button>
     </form>
 
-    <form hidden action="{% url 'smartathon:create competition dev ui' %}" method="get">
+    <form action="{% url 'smartathon:list team details dev ui' %}" method="get">
         <button type="submit">View team details</button>
     </form>
+
 {% else %}
     <form action="{% url 'smartathon:create user dev ui' %}" method="get">
         <button type="submit">Sign Up</button>
@@ -22,51 +26,73 @@
     </form>
 {% endif %}
 
-<ul>
-    {% for c in c_list %}
-        <li>
-            {{ c.cname }}
-            <br>
-            <b>Date: {{ c.cdate }}</b>
-            <br>
-            <b>Venue: {{ c.cvenue }}</b>
-            <br>
-            <i>{{ c.cdesc }}</i>
-            <br>
-            You can create a team of {{ c.max_members }} members.
-        </li>
-        <br>
-    {% endfor %}
-</ul>
 
-{% for c in c_list %}
-    <h1>{{ c.cname }}</h1>
-    <ul>
-        {% for t in c.teams %}
+{# Listing out the competition list #}
+{% if c_list|length == 0 %}
+
+    <h3>There are no competitions registered so far.</h3>
+
+{% else %}
+
+    <h3>Browse the competition list:</h3>
+
+    <ol>
+        {% for c in c_list %}
             <li>
-                {{ t.tname }}
-                <br>
-                <ul>
-                    <li>Date: {{ c.cdate }}</li>
-                    <li>Venue: {{ c.cvenue }}</li>
-                    <li>Vacant Spaces: {{ t.vacant_members }}</li>
-
-                    {% if session %}
-                        <li>
-                            <form action="{% url 'smartathon:create join request dev ui' t.tname c.cname %}"
-                                  method="get">
-                                <button type="submit">Request team to join.</button>
-                            </form>
-                        </li>{% endif %}
-                </ul>
-            </li>
+                <h4>{{ c.name }} </h4>
+                <b>Date: {{ c.date }}</b> <br>
+                <b>Venue: {{ c.venue }}</b> <br>
+                <i>{{ c.description }}</i> <br>
+                You can create a team of {{ c.max_members }} members.
+            </li> <br>
         {% endfor %}
-    </ul>
+    </ol>
 
-    {% if session %}
-        <form action="{% url 'smartathon:create team dev ui' c.cname %}" method="get">
+{% endif %}
+
+
+{# Listing out the team list in each competition #}
+{% for c in c_list %}
+    <h1>{{ c.name }}</h1>
+
+    {% if c.teams|length == 0 %}
+
+        <h3>There are no teams created so far.</h3>
+
+    {% else %}
+
+        <ol>
+            {% for t in c.teams %}
+                <li>
+                    <h4>{{ t.name }} </h4>
+                    <ul>
+                        <li><b>Date: {{ c.date }}</b></li>
+                        <li>Venue: {{ c.venue }}</li>
+                        <li><b>Vacant Spaces: {{ t.vacant_members }}</b></li>
+
+                        <li>
+                            {% if logged_in_user %}
+                                <form action="{% url 'smartathon:create join request dev ui' t.name c.name %}"
+                                      method="get">
+                                    <button type="submit">Request team to join.</button>
+                                </form>
+                            {% else %}
+                                <i>Login to send request.</i>
+                            {% endif %}
+                        </li>
+                    </ul>
+                </li>
+            {% endfor %}
+        </ol>
+
+    {% endif %}
+
+    {% if logged_in_user %}
+        <form action="{% url 'smartathon:create team dev ui' c.name c.id %}" method="get">
             <button type="submit">Create a new Team</button>
         </form>
-    {% endif  %}
+    {% else %}
+        <i>Login to create teams.</i>
+    {% endif %}
 
 {% endfor %}

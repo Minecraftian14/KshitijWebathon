@@ -1,6 +1,6 @@
-<h1>{{ status }}</h1>
-<p>{{ reason }}</p>
+<h1>{{ status|title }}</h1>
+<p>{{ reason|capfirst }}</p>
 
-<form action="{% url 'smartathon:list competitions handler' %}">
+<form action="{% url 'smartathon:list competitions dev ui' %}">
     <button type="submit">Home</button>
 </form>
