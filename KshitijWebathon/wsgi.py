@@ -11,6 +11,18 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
+import socketio
+
+from smartathon.views import sio
+
+from socketio import WSGIApp
+
+import eventlet
+import eventlet.wsgi
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "KshitijWebathon.settings")
 
-application = get_wsgi_application()
+django_app = get_wsgi_application()
+application = WSGIApp(sio, django_app)
+
+eventlet.wsgi.server(eventlet.listen(('', 8000)), application)

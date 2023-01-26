@@ -1,8 +1,53 @@
-from django.http import HttpResponse, HttpRequest, JsonResponse
+from django.http import HttpResponse
+
 from .models import *
 from .view_utils import *
 from django.shortcuts import render
+
 import re
+
+import socketio
+
+sio = socketio.Server(async_mode='eventlet')
+thread = None
+
+
+def background_thread():
+    count = 0
+    while True:
+        sio.sleep(3)
+        count += 1
+        print(count)
+        sio.emit('my_response', {'data': f'Server generated event {count}'})
+
+
+@backend_command
+def list_competitions_command(req: HttpRequest):
+    global thread
+    if thread is None:
+        thread = sio.start_background_task(background_thread)
+
+    c_list = []
+    for c in Competition.objects.all():
+
+        # Only show teams which still have vacancies
+        teams = c.teamdetails_set.filter(vacant_spaces__gt=0)
+
+        if 'logged_in_user' in req.session:
+            # If user is already in one team from the competition, don't show any teams.
+            if teams.filter(members={'u_name': req.session['logged_in_user']}).count() > 0:
+                continue
+
+            # # Old Behaviour
+            # # Only show teams which user is not a part of
+            # teams = teams.exclude(members={'u_name': req.session['logged_in_user']})
+
+        c_list.append({
+            'id': c.pk, 'name': c.name, 'description': c.description, 'date': c.date,
+            'venue': c.venue, 'max_members': c.max_members,
+            'teams': [t.short_table() for t in teams]
+        })
+    return success('query successful', c_list)
 
 
 @backend_command
@@ -106,8 +151,8 @@ def create_join_request_command(req: HttpRequest):
     assert_expr(team.vacant_spaces > 0, "the team just accepted someone else...")
 
     Request(author=user, team=team, request_message=request_message).save()
-    team.vacant_spaces -= 1
-    team.save()
+    # team.vacant_spaces -= 1
+    # team.save()
 
     return success('request sent')
 
@@ -119,27 +164,20 @@ def accept_join_request_command(req: HttpRequest):
     u_name = request.author.name
 
     request.team.members = request.team.members + [{'u_name': u_name}]
-    assert_expr(request.team.vacant_spaces > 0, 'illegal state! team must have at least one vacant space')
-    request.team.vacant_spaces = request.team.vacant_spaces - 1
+    vacant_spaces = request.team.vacant_spaces
+    assert_expr(vacant_spaces > 0, 'illegal state! team must have at least one vacant space')
+
+    vacant_spaces -= 1
+    if vacant_spaces > 0:
+        sio.emit('vacant_spaces_update', {'t_id': request.team.pk, 'vacant_spaces': vacant_spaces})
+    elif vacant_spaces == 0:
+        sio.emit('team_full_update', {'t_id': request.team.pk})
+
+    request.team.vacant_spaces = vacant_spaces
     request.team.save()
     request.delete()
 
     return success('request accepted')
-
-
-@backend_command
-def list_competitions_command(req: HttpRequest):
-    c_list = []
-    for c in Competition.objects.all():
-        teams = c.teamdetails_set.filter(vacant_spaces__gt=0)
-        if 'logged_in_user' in req.session:
-            teams = teams.exclude(members={'u_name': req.session['logged_in_user']})
-        c_list.append({
-            'id': c.pk, 'name': c.name, 'description': c.description, 'date': c.date,
-            'venue': c.venue, 'max_members': c.max_members,
-            'teams': [t.short_table() for t in teams]
-        })
-    return success('query successful', c_list)
 
 
 @backend_command
@@ -162,10 +200,4 @@ def list_team_details_command(req: HttpRequest):
         'your_teams': your_teams,
         'requests': requests,
         'pending_requests': pending_requests,
-    })
-
-
-def list_team_details_handler(req: HttpRequest):
-    return render(req, 'devui/team_details.html', {
-
     })

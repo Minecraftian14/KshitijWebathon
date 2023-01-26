@@ -47,17 +47,19 @@ class TeamDetails(models.Model):
 
     def short_table(self):
         return {
+            'id': self.pk,
             'name': self.name,
-            'vacant_members': self.vacant_spaces
+            'vacant_spaces': self.vacant_spaces
         }
 
     def long_table(self):
         return {
+            'id': self.pk,
             'name': self.name,
             'c_name': self.competition.name,
             'date': self.competition.date,
             'venue': self.competition.venue,
-            'vacant_members': self.vacant_spaces
+            'vacant_spaces': self.vacant_spaces
         }
 
 

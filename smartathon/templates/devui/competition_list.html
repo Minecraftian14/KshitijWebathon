@@ -1,6 +1,44 @@
+<html lang="en">
+<head>
+
+    <title>Some Title</title>
+
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.3/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const socket = io.connect();
+
+            socket.on('connect', function () {
+                socket.emit('my_event', {data: 'I\'m connected!'});
+            });
+            socket.on('disconnect', function () {
+                document.getElementById('log').innerHTML += '<br>Disconnected';
+            });
+            socket.on('my_response', function (msg) {
+                document.getElementById('log').innerHTML += '<br>Received: ' + msg.data;
+            });
+
+            socket.on('vacant_spaces_update', function (msg) {
+                document.getElementById(msg.t_id + '.vacant_spaces').innerHTML = msg.vacant_spaces;
+            });
+            socket.on('team_full_update', function (msg) {
+                document.getElementById(msg.t_id).remove();
+            });
+
+        }, false);
+
+    </script>
+</head>
+
+<body>
+
 <h1>Competitions</h1>
 
-<h2>{{ logged_in_user }}</h2>
+<h2>down</h2>
+<h2 id="log">lol</h2>
+<h2>up</h2>
 
 {# Log In/ Sign In/ Log Out/ New Competition/ Team Details #}
 {% if logged_in_user %}
@@ -63,12 +101,12 @@
 
         <ol>
             {% for t in c.teams %}
-                <li>
+                <li id="{{ t.id }}">
                     <h4>{{ t.name }} </h4>
                     <ul>
                         <li><b>Date: {{ c.date }}</b></li>
                         <li>Venue: {{ c.venue }}</li>
-                        <li><b>Vacant Spaces: {{ t.vacant_members }}</b></li>
+                        <li id="{{ t.id }}.vacant_spaces"><b>Vacant Spaces: {{ t.vacant_spaces }}</b></li>
 
                         <li>
                             {% if logged_in_user %}
@@ -96,3 +134,7 @@
     {% endif %}
 
 {% endfor %}
+
+</body>
+
+</html>

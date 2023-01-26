@@ -9,7 +9,7 @@
                 <ul>
                     <li><b>Date: {{ t.date }}</b></li>
                     <li>Venue: {{ t.venue }}</li>
-                    <li><b>Vacant Spaces: {{ t.vacant_members }}</b></li>
+                    <li><b>Vacant Spaces: {{ t.vacant_spaces }}</b></li>
                 </ul>
             </li>
         {% endfor %}
@@ -24,7 +24,7 @@
                 <ul>
                     <li><b>Date: {{ t.date }}</b></li>
                     <li>Venue: {{ t.venue }}</li>
-                    <li><b>Vacant Spaces: {{ t.vacant_members }}</b></li>
+                    <li><b>Vacant Spaces: {{ t.vacant_spaces }}</b></li>
                 </ul>
             </li>
         {% endfor %}
@@ -39,7 +39,7 @@
                 <ul>
                     <li><b>Date: {{ tr.team.date }}</b></li>
                     <li>Venue: {{ tr.team.venue }}</li>
-                    <li><b>Vacant Spaces: {{ tr.team.vacant_members }}</b></li>
+                    <li><b>Vacant Spaces: {{ tr.team.vacant_spaces }}</b></li>
                     <li>
                         <ul>
                             {% for r in tr.requests %}

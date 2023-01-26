@@ -4,6 +4,13 @@ from . import views
 
 app_name = 'smartathon'
 urlpatterns = [
+
+    path('', views.list_competitions_command.dev_ui('competition_list', lambda req: {
+        'c_list': views.list_competitions_command(req)['data'],
+        'logged_in_user': req.session['logged_in_user'] if 'logged_in_user' in req.session else None
+    }), name='list competitions dev ui'),
+    path('list_competitions_service', views.list_competitions_command.service(), name='list competitions service'),
+
     path('create_user_dev_ui', views.create_user_command.dev_ui('signup'), name='create user dev ui'),
     path('create_user_service', views.create_user_command.service(), name='create user service'),
     path('create_user_handler', views.create_user_command.handler(), name='create user handler'),
@@ -37,12 +44,6 @@ urlpatterns = [
          name='accept join request service'),
     path('accept_join_request_handler', views.accept_join_request_command.handler(),
          name='accept join request handler'),
-
-    path('', views.list_competitions_command.dev_ui('competition_list', lambda req: {
-        'c_list': views.list_competitions_command(req)['data'],
-        'logged_in_user': req.session['logged_in_user'] if 'logged_in_user' in req.session else None
-    }), name='list competitions dev ui'),
-    path('list_competitions_service', views.list_competitions_command.service(), name='list competitions service'),
 
     path('list_team_details_dev_ui', views.list_team_details_command.dev_ui('team_details', lambda req: {
         'data': views.list_team_details_command(req)['data'],
