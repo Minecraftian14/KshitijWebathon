@@ -1,4 +1,4 @@
 .idea/
 *.pyc
-KshitijWebathon/mySecrets.py
+**/mySecrets.py
 **/migrations/
