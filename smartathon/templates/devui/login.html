@@ -1,0 +1,14 @@
+<h1>Log In</h1>
+<form action="{% url 'smartathon:user login handler' %}" method="post">
+
+    {% csrf_token %}
+
+    <label for="name">Username:</label><br>
+    <input type="text" name="name" id="name"><br>
+
+    <label for="password">Password:</label><br>
+    <input type="password" name="password" id="password"><br>
+
+    <input type="submit" name="submit" id="submit"><br>
+
+</form>

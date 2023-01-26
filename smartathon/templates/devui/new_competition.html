@@ -1,0 +1,24 @@
+
+<h1>Register a new competition!</h1>
+<form action="{% url 'smartathon:create competition handler' %}" method="post">
+
+    {% csrf_token %}
+
+    <input type="text" name="name" id="name">
+    <label for="name">Please enter the competition name:</label><br>
+
+    <textarea name="description" id="description"> </textarea>
+    <label for="description">Please add a short description for the competition:</label><br>
+
+    <input type="datetime-local" name="date" id="date">
+    <label for="date">Specify the date and time of the competition:</label><br>
+
+    <textarea name="venue" id="venue"> </textarea>
+    <label for="venue">Specify the venue of this competition:</label><br>
+
+    <input type="number" name="max_members" id="max_members">
+    <label for="max_members">Enter the maximum number of members per team:</label><br>
+
+    <input type="submit" name="submit" id="submit">
+
+</form>

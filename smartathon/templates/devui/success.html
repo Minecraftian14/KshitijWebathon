@@ -1,0 +1,6 @@
+<h1>{{ status|title }}</h1>
+<p>{{ reason|capfirst }}</p>
+
+<form action="{% url 'smartathon:list competitions dev ui' %}">
+    <button type="submit">Home</button>
+</form>

@@ -1,0 +1,168 @@
+<html lang="en">
+<head>
+
+    <title>Some Title</title>
+
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.3/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const socket = io.connect();
+
+            socket.on('connect', function () {
+                socket.emit('my_event', {data: 'I\'m connected!'});
+            });
+            socket.on('disconnect', function () {
+                document.getElementById('log').innerHTML += '<br>Disconnected';
+            });
+
+            socket.on('vacant_spaces_update', function (msg) {
+                document.getElementById(msg.t_id + '.vacant_spaces').innerHTML = msg.vacant_spaces;
+            });
+            socket.on('team_full_update', function (msg) {
+                document.getElementById(msg.t_id).remove();
+            });
+
+        }, false);
+
+    </script>
+</head>
+
+<body>
+
+<h1>Competitions</h1>
+
+<h2>down</h2>
+<h2 id="log">lol</h2>
+<h2>up</h2>
+
+{# Log In/ Sign In/ Log Out/ New Competition/ Team Details #}
+{% if logged_in_user %}
+    <form action="{% url 'smartathon:user logout handler' %}" method="get">
+        <button type="submit">Log Out</button>
+    </form>
+
+    <form action="{% url 'smartathon:create competition dev ui' %}" method="get">
+        <button type="submit">Register a new competition</button>
+    </form>
+
+    <form action="{% url 'smartathon:list team details dev ui' %}" method="get">
+        <button type="submit">View team details</button>
+    </form>
+
+{% else %}
+    <form action="{% url 'smartathon:create user dev ui' %}" method="get">
+        <button type="submit">Sign Up</button>
+    </form>
+
+    <form action="{% url 'smartathon:user login dev ui' %}" method="get">
+        <button type="submit">Log In</button>
+    </form>
+{% endif %}
+
+<hr>
+
+{# Listing out the competition list #}
+{% if c_list|length == 0 %}
+
+    <h3>There are no competitions registered so far.</h3>
+
+{% else %}
+
+    <h3>Browse the competition list:</h3>
+
+    <ol>
+        {% for c in c_list %}
+            <li>
+                <h4>{{ c.name }} </h4>
+                <b>Date: {{ c.date }}</b> <br>
+                <b>Venue: {{ c.venue }}</b> <br>
+                <i>{{ c.description }}</i> <br>
+                You can create a team of {{ c.max_members }} members.
+            </li> <br>
+        {% endfor %}
+    </ol>
+
+{% endif %}
+
+<hr>
+
+{# Listing out the team list in each competition #}
+{% for c in c_list %}
+    <h1>{{ c.name }}</h1>
+
+    {% if c.teams|length == 0 %}
+
+        <h3>There are no teams created so far.</h3>
+
+    {% else %}
+
+        <ol>
+            {% for t in c.teams %}
+
+                <li id="{{ t.id }}">
+                    <h4>{{ t.name }} </h4>
+                    <ul>
+                        <li><b>Date: {{ c.date }}</b></li>
+                        <li>Venue: {{ c.venue }}</li>
+                        <li id="{{ t.id }}.vacant_spaces"><b>Vacant Spaces: {{ t.vacant_spaces }}</b></li>
+
+                        <li>
+                            {% if logged_in_user %}
+
+                                {% if t.is_member is True %}
+
+                                    <i>You are a member.</i>
+
+                                {% elif t.request_status is True %}
+
+                                    <i>You have already sent a request.</i>
+
+                                {% elif not c.has_found_a_team %}
+
+                                    <form action="{% url 'smartathon:create join request dev ui' t.name c.name %}"
+                                          method="get">
+                                        <button type="submit">Request team to join.</button>
+                                    </form>
+
+                                {% else %}
+
+                                    Illegal state..
+
+                                {% endif %}
+
+                            {% else %}
+
+                                <i>Login to send request.</i>
+
+                            {% endif %}
+                        </li>
+                    </ul>
+                </li>
+            {% endfor %}
+        </ol>
+
+    {% endif %}
+
+    {% if logged_in_user %}
+
+        {% if not c.has_found_a_team %}
+
+            <form action="{% url 'smartathon:create team dev ui' c.name c.id %}" method="get">
+                <button type="submit">Create a new Team</button>
+            </form>
+
+        {% endif %}
+
+    {% else %}
+
+        <i>Login to create teams.</i>
+
+    {% endif %}
+
+{% endfor %}
+
+</body>
+
+</html>

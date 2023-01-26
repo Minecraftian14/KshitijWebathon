@@ -1,0 +1,74 @@
+{% if logged_in_user %}
+
+    <h1>Your teams</h1>
+
+    <ol>
+        {% for t in data.your_teams %}
+            <li>
+                <h4>{{ t.name }}: {{ t.c_name }} </h4>
+                <ul>
+                    <li><b>Date: {{ t.date }}</b></li>
+                    <li>Venue: {{ t.venue }}</li>
+                    <li><b>Vacant Spaces: {{ t.vacant_spaces }}</b></li>
+                </ul>
+            </li>
+        {% endfor %}
+    </ol>
+
+    <h1>Requested teams</h1>
+
+    <ol>
+        {% for t in data.requests %}
+            <li>
+                <h4>{{ t.name }}: {{ t.c_name }}</h4>
+                <ul>
+                    <li><b>Date: {{ t.date }}</b></li>
+                    <li>Venue: {{ t.venue }}</li>
+                    <li><b>Vacant Spaces: {{ t.vacant_spaces }}</b></li>
+                </ul>
+            </li>
+        {% endfor %}
+    </ol>
+
+    <h1>Pending requests</h1>
+
+    <ol>
+        {% for tr in data.pending_requests %}
+            <li>
+                <h4>{{ tr.team.name }}: {{ tr.team.c_name }}</h4>
+                <ul>
+                    <li><b>Date: {{ tr.team.date }}</b></li>
+                    <li>Venue: {{ tr.team.venue }}</li>
+                    <li><b>Vacant Spaces: {{ tr.team.vacant_spaces }}</b></li>
+                    <li>
+                        <ul>
+                            {% for r in tr.requests %}
+                                <li>
+                                    <b>{{ r.u_name }}</b>
+                                    <form action="{% url 'smartathon:accept join request handler' %}" method="post"
+                                          style="display: inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="r_id" value="{{ r.id }}">
+                                        <button type="submit">Accept</button>
+                                    </form>
+                                    <form action="" method="post" style="display: inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="r_id" value="{{ r.id }}">
+                                        <button type="submit">Decline</button>
+                                    </form>
+                                    <br>
+                                    {{ r.request_message }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+        {% endfor %}
+    </ol>
+
+{% else %}
+
+    Please login first...
+
+{% endif %}
