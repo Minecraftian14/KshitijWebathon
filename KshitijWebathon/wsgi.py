@@ -11,7 +11,7 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-from KshitijWebathon import mySecrets
+from . import mySecrets
 from smartathon.views import sio
 
 from socketio import WSGIApp
