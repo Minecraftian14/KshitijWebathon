@@ -26,8 +26,14 @@ SECRET_KEY = mySecrets.exportedSecretKey
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = mySecrets.exportedDevMode
 
-ALLOWED_HOSTS = ['minecraftian14.pythonanywhere.com', '127.0.0.1', '169.254.130.4']
+ALLOWED_HOSTS = ['minecraftian14.pythonanywhere.com', '127.0.0.1', '169.254.130.4',
+                 'django-instance-627.azurewebsites.net']
 ALLOWED_HOSTS += [os.environ['WEBSITE_HOSTNAME']] if 'WEBSITE_HOSTNAME' in os.environ else []
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://django-instance-627.azurewebsites.net'
+]
+CORS_ORIGIN_WHITELIST = CSRF_TRUSTED_ORIGINS
 
 # Application definition
 
