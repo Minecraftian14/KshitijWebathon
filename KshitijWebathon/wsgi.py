@@ -11,7 +11,7 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-from . import mySecrets
+# from . import mySecrets
 from smartathon.views import sio
 
 from socketio import WSGIApp
@@ -21,7 +21,8 @@ import eventlet.wsgi
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "KshitijWebathon.settings")
 
-if mySecrets.useSimpleTech:
+# if mySecrets.useSimpleTech:
+if True:
     application = get_wsgi_application()
 
 else:
