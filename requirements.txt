@@ -1,0 +1,14 @@
+dnspython
+enum-compat
+eventlet
+greenlet
+monotonic
+python-engineio
+python-socketio
+pytz
+six
+pymongo==3.12.3
+djongo
+eventlet
+python-engineio
+python-socketio

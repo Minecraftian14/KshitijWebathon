@@ -25,7 +25,7 @@ SECRET_KEY = mySecrets.exportedSecretKey
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = mySecrets.exportedDevMode
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['minecraftian14.pythonanywhere.com', '127.0.0.1']
 
 # Application definition
 
@@ -74,10 +74,7 @@ WSGI_APPLICATION = "KshitijWebathon.wsgi.application"
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "djongo",
-        "NAME": "dev_db"
-    }
+    "default": mySecrets.export_default_database(BASE_DIR)
 }
 
 # Password validation

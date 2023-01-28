@@ -11,8 +11,7 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-import socketio
-
+from KshitijWebathon import mySecrets
 from smartathon.views import sio
 
 from socketio import WSGIApp
@@ -22,7 +21,11 @@ import eventlet.wsgi
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "KshitijWebathon.settings")
 
-django_app = get_wsgi_application()
-application = WSGIApp(sio, django_app)
+if mySecrets.useSimpleTech:
+    application = get_wsgi_application()
 
-eventlet.wsgi.server(eventlet.listen(('', 8000)), application)
+else:
+    django_app = get_wsgi_application()
+    application = WSGIApp(sio, django_app)
+
+    eventlet.wsgi.server(eventlet.listen(('', 8000)), application)

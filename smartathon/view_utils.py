@@ -62,11 +62,13 @@ def backend_command(command):
         try:
             return command(*args, **kwargs)
         except ProperException as e:
-            print(repr(e.exception))
-            return {'status': 'fail', 'reason': e.response, 'data': 'none'}
-        except Exception as e:
+            # traceback.print_tb(e.__traceback__)
             # print(repr(e))
-            traceback.print_tb(e.__traceback__)
+            traceback.print_exc()
+            return {'status': 'fail', 'reason': e.response}
+            # return {'status': 'fail', 'reason': e.response, 'data': 'none'}
+        except Exception as e:
+            traceback.print_exc()
             return default_fail_message
 
     def dev_ui(template, data: Callable[[HttpRequest], dict] = lambda r: {}):

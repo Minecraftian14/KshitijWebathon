@@ -1,15 +1,20 @@
 from django.contrib.auth.hashers import check_password, make_password
 
+from KshitijWebathon import mySecrets
 from .models import *
 from .view_utils import *
 
 import re
 import socketio
-import secrets
 
 sio = socketio.Server(async_mode='eventlet')
 
-secretsGenerator = secrets.SystemRandom()
+
+def emit_event(event, data):
+    if mySecrets.useSimpleTech:
+        pass
+    else:
+        sio.emit(event, data)
 
 
 @backend_command
@@ -208,9 +213,9 @@ def accept_join_request_command(req: HttpRequest):
 
     vacant_spaces -= 1
     if vacant_spaces > 0:
-        sio.emit('vacant_spaces_update', {'t_id': request.team.pk, 'vacant_spaces': vacant_spaces})
+        emit_event('vacant_spaces_update', {'t_id': request.team.pk, 'vacant_spaces': vacant_spaces})
     elif vacant_spaces == 0:
-        sio.emit('team_full_update', {'t_id': request.team.pk})
+        emit_event('team_full_update', {'t_id': request.team.pk})
 
     request.team.vacant_spaces = vacant_spaces
     request.team.save()
