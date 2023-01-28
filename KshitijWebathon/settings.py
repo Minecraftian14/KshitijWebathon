@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 from . import mySecrets
 
@@ -26,6 +27,7 @@ SECRET_KEY = mySecrets.exportedSecretKey
 DEBUG = mySecrets.exportedDevMode
 
 ALLOWED_HOSTS = ['minecraftian14.pythonanywhere.com', '127.0.0.1', '169.254.130.4']
+ALLOWED_HOSTS += [os.environ['WEBSITE_HOSTNAME']] if 'WEBSITE_HOSTNAME' in os.environ else []
 
 # Application definition
 
