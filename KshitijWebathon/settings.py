@@ -25,7 +25,7 @@ SECRET_KEY = mySecrets.exportedSecretKey
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = mySecrets.exportedDevMode
 
-ALLOWED_HOSTS = ['minecraftian14.pythonanywhere.com', '127.0.0.1']
+ALLOWED_HOSTS = ['minecraftian14.pythonanywhere.com', '127.0.0.1', '169.254.130.4']
 
 # Application definition
 
