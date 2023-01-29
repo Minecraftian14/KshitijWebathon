@@ -34,6 +34,7 @@ ALLOWED_HOSTS += [socket.gethostbyname(socket.gethostname())]
 CSRF_TRUSTED_ORIGINS = [
     'https://django-instance-627.azurewebsites.net',
     'http://localhost:3000',
+    f'http://{socket.gethostbyname(socket.gethostname())}:3000',
 ]
 CORS_ORIGIN_WHITELIST = CSRF_TRUSTED_ORIGINS
 
