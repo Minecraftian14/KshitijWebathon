@@ -6,3 +6,7 @@ from django.middleware.csrf import get_token
 class CSRFTokenView(View):
     def get(self, request, *args, **kwargs):
         return JsonResponse({'csrf_token': get_token(request)})
+
+
+def index(req):
+    return JsonResponse({'status': 'success', 'reason': 'index'})
