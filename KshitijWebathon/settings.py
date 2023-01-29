@@ -26,12 +26,13 @@ SECRET_KEY = mySecrets.exportedSecretKey
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = mySecrets.exportedDevMode
 
-ALLOWED_HOSTS = ['minecraftian14.pythonanywhere.com', '127.0.0.1', '169.254.130.4',
-                 'django-instance-627.azurewebsites.net']
+ALLOWED_HOSTS = ['127.0.0.1', '169.254.130.4', 'django-instance-627.azurewebsites.net', 'localhost']
+ALLOWED_HOSTS += ['localhost']
 ALLOWED_HOSTS += [os.environ['WEBSITE_HOSTNAME']] if 'WEBSITE_HOSTNAME' in os.environ else []
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://django-instance-627.azurewebsites.net'
+    'https://django-instance-627.azurewebsites.net',
+    'http://localhost:3000',
 ]
 CORS_ORIGIN_WHITELIST = CSRF_TRUSTED_ORIGINS
 
@@ -39,22 +40,26 @@ CORS_ORIGIN_WHITELIST = CSRF_TRUSTED_ORIGINS
 
 INSTALLED_APPS = [
     "smartathon.apps.SmartathonConfig",
+    "reactions.apps.ReactionsConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "corsheaders.middleware.CorsPostCsrfMiddleware",
 ]
 
 ROOT_URLCONF = "KshitijWebathon.urls"
