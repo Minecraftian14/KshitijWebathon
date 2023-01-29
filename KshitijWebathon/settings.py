@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import os
 from pathlib import Path
 from . import mySecrets
+import socket
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,8 +28,8 @@ SECRET_KEY = mySecrets.exportedSecretKey
 DEBUG = mySecrets.exportedDevMode
 
 ALLOWED_HOSTS = ['127.0.0.1', '169.254.130.4', 'django-instance-627.azurewebsites.net', 'localhost']
-ALLOWED_HOSTS += ['localhost']
 ALLOWED_HOSTS += [os.environ['WEBSITE_HOSTNAME']] if 'WEBSITE_HOSTNAME' in os.environ else []
+ALLOWED_HOSTS += [socket.gethostbyname(socket.gethostname())]
 
 CSRF_TRUSTED_ORIGINS = [
     'https://django-instance-627.azurewebsites.net',
