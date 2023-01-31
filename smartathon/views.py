@@ -118,7 +118,7 @@ def create_competition_command(req: HttpRequest):
     assert_expr(int(max_members) >= 2, 'there should be at least 2 members in a team.')
 
     description = from_post(req, 'description')
-    date = timezone.make_aware(from_post(req, 'date'))
+    date = timezone.make_aware(datetime.datetime.strptime(from_post(req, 'date'), '%Y-%m-%dT%H:%M'))
     venue = from_post(req, 'venue')
 
     Competition(name=name, description=description, date=date, venue=venue, max_members=max_members).save()
