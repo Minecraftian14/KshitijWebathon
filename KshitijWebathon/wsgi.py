@@ -2,7 +2,7 @@ import os
 import django
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "KshitijWebathon.settings")
-django.setup()
+# django.setup()
 
 from django.core.wsgi import get_wsgi_application
 from . import mySecrets

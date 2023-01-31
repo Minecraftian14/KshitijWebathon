@@ -14,7 +14,8 @@ class User(models.Model):
 
 
 class Competition(models.Model):
-    name = models.CharField(max_length=40)
+    name = models.CharField(max_length=40, primary_key=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
     date = models.DateTimeField()
     venue = models.CharField(max_length=200)
@@ -39,20 +40,11 @@ class Competition(models.Model):
         return res
 
 
-class UserReference(models.Model):
-    u_name = models.CharField(default='null u_name reference', primary_key=True, max_length=40)
-
-    objects = models.DjongoManager()
-
-    def __str__(self):
-        return f'ref;{self.u_name}'
-
-
 class TeamDetails(models.Model):
     name = models.CharField(max_length=40)
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
     vacant_spaces = models.IntegerField(default=0)
-    members = models.ArrayField(model_container=UserReference)
+    members = models.ArrayReferenceField(to=User, on_delete=models.CASCADE)
 
     objects = models.DjongoManager()
 

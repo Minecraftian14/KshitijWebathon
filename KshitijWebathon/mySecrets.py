@@ -11,7 +11,7 @@ exportedMongoDBPassword = os.environ['MONGO_DB_ATLAS_PASSWORD']
 def export_default_database(base_dir):
     return {
         "ENGINE": "djongo",
-        "NAME": "dev_db",
+        "NAME": "dev_db_safe_fork",
         "CLIENT": {
             "host": f"mongodb+srv://Minecraftian14:{exportedMongoDBPassword}@developmentcluster.ep377hf.mongodb.net/?retryWrites=true&w=majority"
         }

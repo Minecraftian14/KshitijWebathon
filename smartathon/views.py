@@ -54,7 +54,7 @@ def list_competitions_command(req: HttpRequest):
                 'has_found_a_team': has_found_a_team,
                 'teams': [t.short_table(append={
                     'request_status': t.request_set.filter(author=user.pk).count() > 0,
-                    'is_member': {'u_name': user.pk} in t.members
+                    'is_member': user in t.members.all()
                 }) for t in teams]
             }))
 
@@ -111,6 +111,8 @@ def user_logout_command(req: HttpRequest):
 
 @backend_command
 def create_competition_command(req: HttpRequest):
+    user = get_logged_in_user(req)
+
     name = from_post(req, 'name')
     verify_name(name)
 
@@ -121,7 +123,7 @@ def create_competition_command(req: HttpRequest):
     date = timezone.make_aware(datetime.datetime.strptime(from_post(req, 'date'), '%Y-%m-%dT%H:%M'))
     venue = from_post(req, 'venue')
 
-    Competition(name=name, description=description, date=date, venue=venue, max_members=max_members).save()
+    Competition(author=user, name=name, description=description, date=date, venue=venue, max_members=max_members).save()
 
     return success('competition successfully created')
 
@@ -134,15 +136,15 @@ def create_team_command(req: HttpRequest):
     c_id = from_post(req, 'c_id')
     competition = do_or_die(lambda: Competition.objects.get(pk=c_id), malnourished_form('competition name'))
 
-    u_name = req.session[LOGGED_IN_USER_KEY]
-    do_or_die(lambda: User.objects.get(pk=u_name), malnourished_form('affiliated username'))
+    user = get_logged_in_user(req)
+    do_or_die(lambda: User.objects.get(pk=user.name), malnourished_form('affiliated username'))
 
-    assert_expr(TeamDetails.objects.filter(competition_id=c_id, members={'u_name': u_name}).count() == 0,
+    assert_expr(TeamDetails.objects.filter(competition_id=c_id, members={'u_name': user.name}).count() == 0,
                 'you can not join two teams in the same competition')
 
-    competition.teamdetails_set.create(name=name,
-                                       vacant_spaces=competition.max_members - 1,
-                                       members=[{'u_name': u_name}])
+    team: TeamDetails = competition.teamdetails_set.create(name=name,
+                                                           vacant_spaces=competition.max_members - 1)
+    team.members.add(user)
 
     return success('team successfully created')
 
@@ -171,7 +173,7 @@ def create_join_request_command(req: HttpRequest):
 def accept_join_request_command(req: HttpRequest):
     r_id = from_post(req, 'r_id')
     request = do_or_die(lambda: Request.objects.get(pk=r_id), 'invalid request identity')
-    u_name = request.author.name
+    user = do_or_die(lambda: User.objects.get(pk=request.author.name), malnourished_form('username'))
 
     vacant_spaces = request.team.vacant_spaces
     assert_expr(vacant_spaces > 0, 'illegal state! team must have at least one vacant space')
@@ -182,12 +184,12 @@ def accept_join_request_command(req: HttpRequest):
     elif vacant_spaces == 0:
         emit_event('team_full_update', {'t_id': request.team.pk})
 
-    request.team.members = request.team.members + [{'u_name': u_name}]
+    request.team.members.add(user)
     request.team.vacant_spaces = vacant_spaces
     request.team.save()
     request.delete()
     for t in request.team.competition.teamdetails_set.all():
-        t.request_set.filter(author=u_name).delete()
+        t.request_set.filter(author=user.name).delete()
 
     return success('request accepted')
 
@@ -195,7 +197,7 @@ def accept_join_request_command(req: HttpRequest):
 @backend_command
 def list_team_details_command(req: HttpRequest):
     user = get_logged_in_user(req)
-    teams = TeamDetails.objects.filter(members={'u_name': user.name})
+    teams = TeamDetails.objects.filter(members=user)
 
     your_teams = [t.long_table() for t in teams]
     requests = [r.team.long_table() for r in user.request_set.all()]
