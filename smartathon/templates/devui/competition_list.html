@@ -106,7 +106,7 @@
                     <ul>
                         <li><b>Date: {{ c.date }}</b></li>
                         <li>Venue: {{ c.venue }}</li>
-                        <li id="{{ t.id }}.vacant_spaces"><b>Vacant Spaces: {{ t.vacant_spaces }}</b></li>
+                        <li><b>Vacant Spaces:<b id="{{ t.id }}.vacant_spaces">{{ t.vacant_spaces }}</b></b></li>
 
                         <li>
                             {% if logged_in_user %}

@@ -1,3 +1,4 @@
+from django.utils import timezone
 from djongo import models
 
 
@@ -20,6 +21,10 @@ class Competition(models.Model):
     max_members = models.IntegerField(default=0)
 
     objects = models.DjongoManager()
+
+    @staticmethod
+    def delete_old_competitions():
+        Competition.objects.filter(date__lt=timezone.now()).delete()
 
     def __str__(self):
         return f'competition;{self.name};{self.description};{self.date};{self.venue};{self.max_members}'

@@ -1,13 +1,14 @@
 from django.urls import path
 
 from . import views
+from .view_utils import LOGGED_IN_USER_KEY
 
 app_name = 'smartathon'
 urlpatterns = [
 
     path('', views.list_competitions_command.dev_ui('competition_list', lambda req: {
         'c_list': views.list_competitions_command(req)['data'],
-        'logged_in_user': req.session['logged_in_user'] if 'logged_in_user' in req.session else None
+        LOGGED_IN_USER_KEY: req.session[LOGGED_IN_USER_KEY] if LOGGED_IN_USER_KEY in req.session else None
     }), name='list competitions dev ui'),
     path('list_competitions_service/', views.list_competitions_command.service(), name='list competitions service'),
 
@@ -47,7 +48,7 @@ urlpatterns = [
 
     path('list_team_details_dev_ui/', views.list_team_details_command.dev_ui('team_details', lambda req: {
         'data': views.list_team_details_command(req)['data'],
-        'logged_in_user': req.session['logged_in_user'] if 'logged_in_user' in req.session else None
+        LOGGED_IN_USER_KEY: req.session[LOGGED_IN_USER_KEY] if LOGGED_IN_USER_KEY in req.session else None
     }), name='list team details dev ui'),
     path('list_team_details_service/', views.list_team_details_command.service(), name='list team details service'),
 ]

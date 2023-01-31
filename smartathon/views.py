@@ -1,3 +1,5 @@
+import datetime
+
 from django.contrib.auth.hashers import check_password, make_password
 
 from KshitijWebathon import mySecrets
@@ -19,7 +21,9 @@ def emit_event(event, data):
 
 @backend_command
 def list_competitions_command(req: HttpRequest):
-    user = None if 'logged_in_user' not in req.session else User.objects.get(pk=req.session['logged_in_user'])
+    user = get_logged_in_user(req)
+
+    Competition.delete_old_competitions()
 
     if user is None:
         c_list = [c.short_table(append={
@@ -33,12 +37,16 @@ def list_competitions_command(req: HttpRequest):
             teams = c.teamdetails_set.all()
             user_teams = teams.filter(members={'u_name': user.pk})
 
-            # If user is already a member of one of the teams in this competition
             has_found_a_team = user_teams.count() > 0
 
+            # If user is already a member of one of the teams in this competition
+            # No need to display vacant teams
             if has_found_a_team:
                 teams = user_teams
 
+            # Else display all vacant teams so that user can send a request.
+            # Note, that teams to which the user has already sent a request are still visible
+            # and the case where they are filled, the request is deleted so it won't repeat.
             else:
                 teams = teams.filter(vacant_spaces__gt=0)
 
@@ -50,46 +58,6 @@ def list_competitions_command(req: HttpRequest):
                 }) for t in teams]
             }))
 
-    return success('query successful', c_list)
-
-
-@backend_command
-def list_competitions_command_old(req: HttpRequest):
-    c_list = []
-
-    user = None if 'logged_in_user' not in req.session else User.objects.get(pk=req.session['logged_in_user'])
-
-    for c in Competition.objects.all():
-
-        # Only show teams which still have vacancies
-        teams = c.teamdetails_set.filter(vacant_spaces__gt=0)
-
-        is_member_already = False
-
-        request_status = None
-
-        if user is not None:
-            # If user is already in teams from the competition, don't show any other teams.
-            user_teams = teams.filter(members={'u_name': user.pk})
-            if user_teams.count() > 0:
-                is_member_already = True
-                # we don't want to show other teams unnecessarily
-                teams = user_teams
-
-                # # Old Behaviour
-                # # Only show teams which user is not a part of
-                # teams = teams.exclude(members={'u_name': req.session['logged_in_user']})
-
-            request_status = [t.request_set.filter(author=user.pk).count() > 0 for t in teams]
-
-        teams = [{**t.short_table(), 'request_status': r} for t, r in zip(teams, request_status)]
-
-        c_list.append({
-            'id': c.pk, 'name': c.name, 'description': c.description, 'date': c.date,
-            'venue': c.venue, 'max_members': c.max_members,
-            'is_member_already': is_member_already,
-            'teams': teams
-        })
     return success('query successful', c_list)
 
 
@@ -130,14 +98,14 @@ def user_login_command(req: HttpRequest):
     password = from_post(req, 'password')
     assert_expr(check_password(password, user.password), 'invalid password')
 
-    req.session['logged_in_user'] = name
+    req.session[LOGGED_IN_USER_KEY] = name
 
     return success('login successful')
 
 
 @backend_command
 def user_logout_command(req: HttpRequest):
-    del req.session['logged_in_user']
+    del req.session[LOGGED_IN_USER_KEY]
     return success('logout successful')
 
 
@@ -150,7 +118,7 @@ def create_competition_command(req: HttpRequest):
     assert_expr(int(max_members) >= 2, 'there should be at least 2 members in a team.')
 
     description = from_post(req, 'description')
-    date = from_post(req, 'date')
+    date = timezone.make_aware(from_post(req, 'date'))
     venue = from_post(req, 'venue')
 
     Competition(name=name, description=description, date=date, venue=venue, max_members=max_members).save()
@@ -166,7 +134,7 @@ def create_team_command(req: HttpRequest):
     c_id = from_post(req, 'c_id')
     competition = do_or_die(lambda: Competition.objects.get(pk=c_id), malnourished_form('competition name'))
 
-    u_name = req.session['logged_in_user']
+    u_name = req.session[LOGGED_IN_USER_KEY]
     do_or_die(lambda: User.objects.get(pk=u_name), malnourished_form('affiliated username'))
 
     assert_expr(TeamDetails.objects.filter(competition_id=c_id, members={'u_name': u_name}).count() == 0,
@@ -182,7 +150,7 @@ def create_team_command(req: HttpRequest):
 @backend_command
 def create_join_request_command(req: HttpRequest):
     t_name = from_post(req, 't_name')
-    u_name = req.session['logged_in_user']
+    u_name = req.session[LOGGED_IN_USER_KEY]
     assert_expr(Request.objects.filter(author__name=u_name, team__name=t_name).count() == 0,
                 "you can't send request to the same team again")
     assert_expr(TeamDetails.objects.filter(name=t_name, members={'u_name': u_name}).count() == 0,
@@ -195,8 +163,6 @@ def create_join_request_command(req: HttpRequest):
     assert_expr(team.vacant_spaces > 0, "the team just accepted someone else...")
 
     Request(author=user, team=team, request_message=request_message).save()
-    # team.vacant_spaces -= 1
-    # team.save()
 
     return success('request sent')
 
@@ -207,7 +173,6 @@ def accept_join_request_command(req: HttpRequest):
     request = do_or_die(lambda: Request.objects.get(pk=r_id), 'invalid request identity')
     u_name = request.author.name
 
-    request.team.members = request.team.members + [{'u_name': u_name}]
     vacant_spaces = request.team.vacant_spaces
     assert_expr(vacant_spaces > 0, 'illegal state! team must have at least one vacant space')
 
@@ -217,18 +182,20 @@ def accept_join_request_command(req: HttpRequest):
     elif vacant_spaces == 0:
         emit_event('team_full_update', {'t_id': request.team.pk})
 
+    request.team.members = request.team.members + [{'u_name': u_name}]
     request.team.vacant_spaces = vacant_spaces
     request.team.save()
     request.delete()
+    for t in request.team.competition.teamdetails_set.all():
+        t.request_set.filter(author=u_name).delete()
 
     return success('request accepted')
 
 
 @backend_command
 def list_team_details_command(req: HttpRequest):
-    u_name = req.session['logged_in_user']
-    user = do_or_die(lambda: User.objects.get(pk=u_name), "the username does not exist")
-    teams = TeamDetails.objects.filter(members={'u_name': u_name})
+    user = get_logged_in_user(req)
+    teams = TeamDetails.objects.filter(members={'u_name': user.name})
 
     your_teams = [t.long_table() for t in teams]
     requests = [r.team.long_table() for r in user.request_set.all()]

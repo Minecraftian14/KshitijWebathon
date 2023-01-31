@@ -22,3 +22,9 @@ else:
     application = WSGIApp(sio, django_app)
 
     eventlet.wsgi.server(eventlet.listen(('', 8000)), application)
+
+# import subprocess
+# from threading import Thread
+#
+# thread = Thread(target=lambda: subprocess.check_call('cd frontend && npm start', shell=True))
+# thread.start()
