@@ -2,7 +2,7 @@ import os
 import django
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "KshitijWebathon.settings")
-django.setup()
+# django.setup()
 
 from django.core.wsgi import get_wsgi_application
 from . import mySecrets
@@ -22,3 +22,9 @@ else:
     application = WSGIApp(sio, django_app)
 
     eventlet.wsgi.server(eventlet.listen(('', 8000)), application)
+
+# import subprocess
+# from threading import Thread
+#
+# thread = Thread(target=lambda: subprocess.check_call('cd frontend && npm start', shell=True))
+# thread.start()
