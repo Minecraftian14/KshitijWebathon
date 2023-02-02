@@ -63,6 +63,19 @@
 
 <hr>
 
+<form action="{% url 'smartathon:list competitions dev ui' %}" method="post">
+    <input type="text" name="cname" placeholder="Enter competition name."><br/>
+    <input type="radio" name="search_mode" value="Exact" id="sm1">
+    <label for="sm1">Exact Match</label><br/>
+    <input type="radio" name="search_mode" value="Normal" id="sm2" checked>
+    <label for="sm2">Normal Mode</label><br/>
+    <input type="radio" name="search_mode" value="Fuzzy" id="sm3">
+    <label for="sm3">Fuzzy Search</label><br/>
+    <input type="submit">
+</form>
+
+<hr>
+
 {# Listing out the competition list #}
 {% if c_list|length == 0 %}
 

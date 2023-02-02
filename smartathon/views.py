@@ -25,15 +25,20 @@ def list_competitions_command(req: HttpRequest):
 
     Competition.delete_old_competitions()
 
+    if 'cname' in req.POST:
+        competitions = Competition.objects.filter(pk=req.POST['cname'])
+    else:
+        competitions = Competition.objects.all()
+
     if user is None:
         c_list = [c.short_table(append={
             'is_member_already': False,
             'teams': [t.short_table() for t in c.teamdetails_set.filter(vacant_spaces__gt=0)]
-        }) for c in Competition.objects.all()]
+        }) for c in competitions]
 
     else:
         c_list = []
-        for c in Competition.objects.all():
+        for c in competitions:
             teams = c.teamdetails_set.all()
             user_teams = teams.filter(members={'u_name': user.pk})
 

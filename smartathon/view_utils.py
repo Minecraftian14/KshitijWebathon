@@ -10,7 +10,7 @@ from smartathon.models import User
 
 
 def fail(reason, data='null'):
-    return {'status': 'fail', 'reason': reason, 'data': 'null'}
+    return {'status': 'fail', 'reason': reason, 'data': data}
 
 
 def success(reason, data='null'):
