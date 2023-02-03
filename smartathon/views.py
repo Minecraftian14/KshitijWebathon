@@ -202,6 +202,8 @@ def accept_join_request_command(req: HttpRequest):
 @backend_command
 def list_team_details_command(req: HttpRequest):
     user = get_logged_in_user(req)
+    if user is None:
+        user = from_post('name')
     teams = TeamDetails.objects.filter(members=user)
 
     your_teams = [t.long_table() for t in teams]
